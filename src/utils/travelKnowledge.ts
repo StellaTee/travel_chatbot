@@ -1,4 +1,3 @@
-
 // This is a simplified knowledge base for travel recommendations
 // In a real application, this would be connected to a proper RAG system with vector embeddings
 
@@ -140,13 +139,12 @@ export const searchKnowledgeBase = (query: string): string => {
   return generateLLMResponse(query);
 };
 
-// This function mimics an LLM by using a template-based approach
-// In a real implementation, this would call an actual LLM API
-export const generateLLMResponse = (query: string): string => {
+// This function makes an actual API call to an LLM service
+export const generateLLMResponse = async (query: string): Promise<string> => {
   // Retrieve the relevant context based on the query
   const context = retrieveRelevantInfo(query);
   
-  // Basic template for responding to user queries
+  // Create a prompt with RAG context
   const promptTemplate = `
 As a travel assistant, answer the user's question based on this information:
 ${context}
@@ -155,52 +153,65 @@ User query: ${query}
 
 Response:`;
 
-  // In a real implementation, this is where we would call an actual LLM API
-  // For now, we'll simulate an LLM response with a more dynamic template approach
-  
+  try {
+    // Get OpenAI API Key from user input
+    // In a production app, this should be securely stored in environment variables
+    const apiKey = localStorage.getItem('openai_api_key');
+    
+    if (!apiKey) {
+      return "Please provide your OpenAI API key in the settings to enable AI-powered responses.";
+    }
+
+    // Make the actual API call to OpenAI
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini', // Using a fast and capable model
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful travel assistant providing accurate travel information based on the given context.'
+          },
+          {
+            role: 'user',
+            content: promptTemplate
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error from OpenAI API:', errorData);
+      return "I'm having trouble connecting to the AI service. Please try again later.";
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error calling LLM API:', error);
+    return "I'm having trouble processing your request right now. Please try again later.";
+  }
+};
+
+// Helper function for simple hardcoded responses when API is unavailable
+export const getFallbackResponse = (query: string): string => {
   const lowerQuery = query.toLowerCase();
   
-  // Generate more dynamic-looking responses based on query types
-  if (lowerQuery.includes("hello") || lowerQuery.includes("hi") || lowerQuery.includes("hey")) {
-    return "Hello! I'm your travel assistant powered by RAG technology. I can help you with information about destinations like Paris, Tokyo, New York, Rome, and Bali. What would you like to know?";
-  }
-  
-  if (lowerQuery.includes("thank")) {
-    return "You're welcome! I'm glad I could help with your travel planning. Feel free to ask if you have any other questions about your journey.";
-  }
-  
-  // For specific destination queries
+  // For destination specific matches
   for (const info of travelDatabase) {
     const destination = info.destination.toLowerCase();
     if (lowerQuery.includes(destination)) {
-      if (lowerQuery.includes("best time") || lowerQuery.includes("when to visit")) {
-        return `Based on current travel data, the best time to visit ${info.destination} is ${info.bestTimeToVisit} This allows you to enjoy the destination with optimal weather conditions and potentially fewer crowds.`;
-      }
-      
-      if (lowerQuery.includes("see") || lowerQuery.includes("attraction") || lowerQuery.includes("visit")) {
-        return `When visiting ${info.destination}, I recommend checking out these must-see attractions: ${info.mustSeeAttractions.join(", ")}. Each offers a unique perspective on the local culture and history. Would you like more specific information about any of these places?`;
-      }
-      
-      if (lowerQuery.includes("food") || lowerQuery.includes("eat") || lowerQuery.includes("cuisine")) {
-        return `${info.destination} is known for its delicious cuisine. Some local specialties you shouldn't miss include ${info.localCuisine.join(", ")}. These dishes represent the authentic flavors of the region. Would you like recommendations for specific restaurants?`;
-      }
-      
-      if (lowerQuery.includes("tip") || lowerQuery.includes("advice")) {
-        return `Here are some helpful tips for ${info.destination}: ${info.travelTips.join(" ")} Is there anything specific about your ${info.destination} trip you'd like advice on?`;
-      }
-      
-      // General destination query
-      return `${info.destination} is ${info.description} The best time to visit is ${info.bestTimeToVisit} Some must-see attractions include ${info.mustSeeAttractions.slice(0, 3).join(", ")}. Would you like to know more about the local cuisine, travel tips, or other attractions?`;
+      return `${info.destination} is ${info.description} The best time to visit is ${info.bestTimeToVisit}. Some popular attractions include ${info.mustSeeAttractions.slice(0, 3).join(", ")}.`;
     }
   }
   
-  // For general travel queries without a specific destination
-  if (lowerQuery.includes("recommend") || lowerQuery.includes("suggest") || lowerQuery.includes("where should")) {
-    const randomIndex = Math.floor(Math.random() * travelDatabase.length);
-    const suggestion = travelDatabase[randomIndex];
-    return `Based on current travel trends, I'd recommend considering ${suggestion.destination}. ${suggestion.description} The best time to visit is ${suggestion.bestTimeToVisit} Would you like to know more about ${suggestion.destination} or would you prefer recommendations for a different type of destination?`;
-  }
-  
-  // Default response using context information
-  return `Based on the information available, I can tell you that: ${context.split('\n').slice(0, 3).join(' ')} Would you like more specific information about any of these destinations?`;
+  // General fallback
+  return "I can provide information about several popular destinations like Paris, Tokyo, New York, Rome, and Bali. What would you like to know?";
 };

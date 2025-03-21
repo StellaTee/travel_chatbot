@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import LoadingDots from "@/components/LoadingDots";
+import ApiKeyInput from "@/components/ApiKeyInput";
 import { generateResponse } from "@/utils/chatbot";
 import { Globe } from "lucide-react";
 
@@ -17,7 +18,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "Hello! I'm your travel assistant. Ask me about destinations, travel tips, or recommendations for your next journey.",
+      content: "Hello! I'm your travel assistant. Ask me about destinations, travel tips, or recommendations for your next journey. To enable AI-powered responses, please set your OpenAI API key in the settings.",
       type: "bot",
     },
   ]);
@@ -86,7 +87,10 @@ const Index = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-accent/20 p-4 md:p-8">
-      <div className="w-full max-w-2xl h-full md:h-[85vh] flex flex-col rounded-3xl overflow-hidden glass-panel shadow-lg border border-border/40">
+      <div className="w-full max-w-2xl h-full md:h-[85vh] flex flex-col rounded-3xl overflow-hidden glass-panel shadow-lg border border-border/40 relative">
+        {/* API Key Settings Button */}
+        <ApiKeyInput />
+        
         {/* Header */}
         <div className="p-6 border-b border-border/40 flex items-center justify-center">
           <div className="flex items-center space-x-3">
