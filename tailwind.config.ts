@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -70,25 +71,42 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'fade-in': {
+					from: { opacity: '0', transform: 'translateY(10px)' },
+					to: { opacity: '1', transform: 'translateY(0)' }
+				},
+				'fade-out': {
+					from: { opacity: '1', transform: 'translateY(0)' },
+					to: { opacity: '0', transform: 'translateY(10px)' }
+				},
+				'pulse-dot': {
+					'0%': { transform: 'scale(0.95)', opacity: '0.8' },
+					'50%': { transform: 'scale(1.05)', opacity: '1' },
+					'100%': { transform: 'scale(0.95)', opacity: '0.8' }
+				},
+				'float': {
+					'0%': { transform: 'translateY(0px)' },
+					'50%': { transform: 'translateY(-5px)' },
+					'100%': { transform: 'translateY(0px)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.6s ease-out forwards',
+				'fade-out': 'fade-out 0.6s ease-out forwards',
+				'pulse-dot': 'pulse-dot 1.5s ease-in-out infinite',
+				'float': 'float 3s ease-in-out infinite'
+			},
+			backdropBlur: {
+				'xs': '2px',
 			}
 		}
 	},
