@@ -1,6 +1,6 @@
 
 // This is a simplified knowledge base for travel recommendations
-// In a real application, this would be connected to a proper RAG system
+// In a real application, this would be connected to a proper RAG system with vector embeddings
 
 interface TravelInfo {
   destination: string;
@@ -84,51 +84,123 @@ const travelDatabase: TravelInfo[] = [
   }
 ];
 
-export const searchKnowledgeBase = (query: string): string => {
+// Function to find the most relevant documents based on the query
+export const retrieveRelevantInfo = (query: string): string => {
   const lowerQuery = query.toLowerCase();
-  
-  // Check for destination specific queries
+  let relevantInfo = "";
+
+  // Check for destination specific matches
   for (const info of travelDatabase) {
     const destination = info.destination.toLowerCase();
-    
     if (lowerQuery.includes(destination)) {
-      // Generate appropriate response based on the query
+      // If this destination is mentioned, gather all information about it
+      relevantInfo += `Destination: ${info.destination}\n`;
+      relevantInfo += `Description: ${info.description}\n`;
+      relevantInfo += `Best time to visit: ${info.bestTimeToVisit}\n`;
+      relevantInfo += `Must-see attractions: ${info.mustSeeAttractions.join(", ")}\n`;
+      relevantInfo += `Local cuisine: ${info.localCuisine.join(", ")}\n`;
+      relevantInfo += `Travel tips: ${info.travelTips.join(" ")}\n\n`;
+      break; // Found a specific destination match
+    }
+  }
+
+  // If no specific destination is found, check for topic matches
+  if (!relevantInfo) {
+    if (lowerQuery.includes("best time") || lowerQuery.includes("when to visit") || lowerQuery.includes("season")) {
+      for (const info of travelDatabase) {
+        relevantInfo += `${info.destination}: ${info.bestTimeToVisit}\n`;
+      }
+    } else if (lowerQuery.includes("see") || lowerQuery.includes("attraction") || lowerQuery.includes("visit")) {
+      for (const info of travelDatabase) {
+        relevantInfo += `${info.destination} attractions: ${info.mustSeeAttractions.join(", ")}\n`;
+      }
+    } else if (lowerQuery.includes("food") || lowerQuery.includes("eat") || lowerQuery.includes("cuisine")) {
+      for (const info of travelDatabase) {
+        relevantInfo += `${info.destination} cuisine: ${info.localCuisine.join(", ")}\n`;
+      }
+    } else if (lowerQuery.includes("tip") || lowerQuery.includes("advice") || lowerQuery.includes("recommend")) {
+      for (const info of travelDatabase) {
+        relevantInfo += `${info.destination} tips: ${info.travelTips.slice(0, 3).join(" ")}\n`;
+      }
+    }
+  }
+
+  // Fallback - provide general information if nothing specific was matched
+  if (!relevantInfo) {
+    relevantInfo = "Available destinations: " + travelDatabase.map(info => info.destination).join(", ") + "\n";
+    relevantInfo += "You can ask about best time to visit, attractions, local cuisine, or travel tips.";
+  }
+
+  return relevantInfo;
+};
+
+// Legacy function - maintained for backward compatibility
+export const searchKnowledgeBase = (query: string): string => {
+  // Simply call the new LLM function directly
+  return generateLLMResponse(query);
+};
+
+// This function mimics an LLM by using a template-based approach
+// In a real implementation, this would call an actual LLM API
+export const generateLLMResponse = (query: string): string => {
+  // Retrieve the relevant context based on the query
+  const context = retrieveRelevantInfo(query);
+  
+  // Basic template for responding to user queries
+  const promptTemplate = `
+As a travel assistant, answer the user's question based on this information:
+${context}
+
+User query: ${query}
+
+Response:`;
+
+  // In a real implementation, this is where we would call an actual LLM API
+  // For now, we'll simulate an LLM response with a more dynamic template approach
+  
+  const lowerQuery = query.toLowerCase();
+  
+  // Generate more dynamic-looking responses based on query types
+  if (lowerQuery.includes("hello") || lowerQuery.includes("hi") || lowerQuery.includes("hey")) {
+    return "Hello! I'm your travel assistant powered by RAG technology. I can help you with information about destinations like Paris, Tokyo, New York, Rome, and Bali. What would you like to know?";
+  }
+  
+  if (lowerQuery.includes("thank")) {
+    return "You're welcome! I'm glad I could help with your travel planning. Feel free to ask if you have any other questions about your journey.";
+  }
+  
+  // For specific destination queries
+  for (const info of travelDatabase) {
+    const destination = info.destination.toLowerCase();
+    if (lowerQuery.includes(destination)) {
       if (lowerQuery.includes("best time") || lowerQuery.includes("when to visit")) {
-        return `The best time to visit ${info.destination} is ${info.bestTimeToVisit}`;
+        return `Based on current travel data, the best time to visit ${info.destination} is ${info.bestTimeToVisit} This allows you to enjoy the destination with optimal weather conditions and potentially fewer crowds.`;
       }
       
       if (lowerQuery.includes("see") || lowerQuery.includes("attraction") || lowerQuery.includes("visit")) {
-        return `When visiting ${info.destination}, don't miss these attractions: ${info.mustSeeAttractions.join(", ")}.`;
+        return `When visiting ${info.destination}, I recommend checking out these must-see attractions: ${info.mustSeeAttractions.join(", ")}. Each offers a unique perspective on the local culture and history. Would you like more specific information about any of these places?`;
       }
       
       if (lowerQuery.includes("food") || lowerQuery.includes("eat") || lowerQuery.includes("cuisine")) {
-        return `${info.destination} is known for its delicious cuisine including: ${info.localCuisine.join(", ")}.`;
+        return `${info.destination} is known for its delicious cuisine. Some local specialties you shouldn't miss include ${info.localCuisine.join(", ")}. These dishes represent the authentic flavors of the region. Would you like recommendations for specific restaurants?`;
       }
       
-      if (lowerQuery.includes("tip") || lowerQuery.includes("advice") || lowerQuery.includes("recommend")) {
-        return `Travel tips for ${info.destination}: ${info.travelTips.slice(0, 3).join(" ")}`;
+      if (lowerQuery.includes("tip") || lowerQuery.includes("advice")) {
+        return `Here are some helpful tips for ${info.destination}: ${info.travelTips.join(" ")} Is there anything specific about your ${info.destination} trip you'd like advice on?`;
       }
       
-      // Default destination information
-      return `${info.destination}: ${info.description} The best time to visit is ${info.bestTimeToVisit} Top attractions include ${info.mustSeeAttractions.slice(0, 3).join(", ")}.`;
+      // General destination query
+      return `${info.destination} is ${info.description} The best time to visit is ${info.bestTimeToVisit} Some must-see attractions include ${info.mustSeeAttractions.slice(0, 3).join(", ")}. Would you like to know more about the local cuisine, travel tips, or other attractions?`;
     }
   }
   
-  // General travel queries
+  // For general travel queries without a specific destination
   if (lowerQuery.includes("recommend") || lowerQuery.includes("suggest") || lowerQuery.includes("where should")) {
     const randomIndex = Math.floor(Math.random() * travelDatabase.length);
     const suggestion = travelDatabase[randomIndex];
-    return `I'd recommend considering ${suggestion.destination}. ${suggestion.description} The best time to visit is ${suggestion.bestTimeToVisit}.`;
+    return `Based on current travel trends, I'd recommend considering ${suggestion.destination}. ${suggestion.description} The best time to visit is ${suggestion.bestTimeToVisit} Would you like to know more about ${suggestion.destination} or would you prefer recommendations for a different type of destination?`;
   }
   
-  if (lowerQuery.includes("best destination") || lowerQuery.includes("top place")) {
-    return "Some of the world's top travel destinations include Paris, Tokyo, New York City, Rome, and Bali. Each offers unique experiences, culture, and attractions. Is there a specific type of trip you're interested in?";
-  }
-  
-  if (lowerQuery.includes("pack") || lowerQuery.includes("luggage") || lowerQuery.includes("bring")) {
-    return "When packing for a trip, essential items include: passport/ID, adaptable clothing, comfortable shoes, basic toiletries, any necessary medications, a universal adapter, and digital copies of important documents. Would you like more specific packing tips for a particular destination?";
-  }
-  
-  // Fallback response
-  return "I can provide information about travel destinations like Paris, Tokyo, New York, Rome, and Bali. I can also help with general travel tips. What would you like to know about?";
+  // Default response using context information
+  return `Based on the information available, I can tell you that: ${context.split('\n').slice(0, 3).join(' ')} Would you like more specific information about any of these destinations?`;
 };

@@ -1,5 +1,5 @@
 
-import { searchKnowledgeBase } from './travelKnowledge';
+import { generateLLMResponse } from './travelKnowledge';
 
 // Simulate response delay to make the conversation feel more natural
 const RESPONSE_DELAY = 1200;
@@ -17,28 +17,25 @@ export const generateResponse = async (message: string): Promise<string> => {
 const processMessage = (message: string): string => {
   const lowerMessage = message.toLowerCase();
   
-  // Generic greetings
+  // Basic conversation handlers for common phrases
   if (containsAny(lowerMessage, ['hello', 'hi', 'hey', 'greetings'])) {
-    return "Hello! I'm your travel assistant. How can I help with your travel plans today?";
+    return "Hello! I'm your travel assistant powered by RAG technology. How can I help with your travel plans today?";
   }
   
-  // Farewell responses
   if (containsAny(lowerMessage, ['bye', 'goodbye', 'see you', 'farewell'])) {
     return "Goodbye! Feel free to ask for travel advice anytime you're planning your next adventure.";
   }
   
-  // Identity questions
   if (containsAny(lowerMessage, ['who are you', 'what are you', 'your name'])) {
-    return "I'm a travel assistant designed to help you discover destinations and provide travel tips. How can I assist with your travel plans?";
+    return "I'm a travel assistant that uses RAG (Retrieval Augmented Generation) to help you discover destinations and provide travel tips. How can I assist with your travel plans?";
   }
   
-  // Gratitude responses
   if (containsAny(lowerMessage, ['thank', 'thanks', 'appreciate', 'helpful'])) {
     return "You're welcome! I'm glad I could help. Is there anything else you'd like to know about travel destinations?";
   }
   
-  // Check knowledge base for relevant information
-  return searchKnowledgeBase(message);
+  // For all other queries, use the RAG-based response generation
+  return generateLLMResponse(message);
 };
 
 // Helper function to check if string contains any of the phrases
